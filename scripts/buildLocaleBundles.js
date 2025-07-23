@@ -1,10 +1,11 @@
 #!/usr/bin/env node
 
 /* eslint-disable no-console */
-const locales = require('@box/languages');
+let locales = require('@box/languages');
 const { execSync } = require('child_process');
 const { Worker, isMainThread, parentPort, threadId, workerData } = require('worker_threads');
 
+locales = locales.filter(e => e === 'en-US');
 if (isMainThread) {
     const totalBundleCount = locales.length * 2; // with and without React
     const maxActiveWorkers = 5;

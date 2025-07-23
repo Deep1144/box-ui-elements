@@ -30,7 +30,7 @@ import {
     DEFAULT_HOSTNAME_API,
     DEFAULT_HOSTNAME_UPLOAD,
     DEFAULT_PAGE_NUMBER,
-    DEFAULT_PAGE_SIZE,
+    // DEFAULT_PAGE_SIZE,
     DEFAULT_ROOT,
     DEFAULT_SEARCH_DEBOUNCE,
     DEFAULT_VIEW_FILES,
@@ -76,6 +76,7 @@ import '../common/base.scss';
 import '../common/modal.scss';
 import './ContentPicker.scss';
 
+const DEFAULT_PAGE_SIZE = 1000;
 type Props = {
     apiHost: string,
     autoFocus: boolean,
@@ -115,6 +116,7 @@ type Props = {
     requestInterceptor?: Function,
     responseInterceptor?: Function,
     rootFolderId: string,
+    selectAllEnabled?: boolean,
     sharedLink?: string,
     sharedLinkPassword?: string,
     showSelectedButton: boolean,
@@ -189,6 +191,7 @@ class ContentPicker extends Component<Props, State> {
         clearSelectedItemsOnNavigation: false,
         isHeaderLogoVisible: true,
         isPaginationVisible: true,
+        selectAllEnabled: false,
     };
 
     /**
@@ -514,6 +517,54 @@ class ContentPicker extends Component<Props, State> {
     }
 
     /**
+     * Fetches all items in a folder recursively when selectAllEnabled is true
+     *
+     * @private
+     * @param {string} folderId - folder id
+     * @param {number} offset - starting offset
+     * @param {Array} allItems - accumulated items
+     * @param {Function} onComplete - callback when all items are fetched
+     * @return {void}
+     */
+    fetchAllItems = (folderId: string, offset: number = 0, allItems: BoxItem[] = [], onComplete?: Function): void => {
+        const { sortBy, sortDirection }: State = this.state;
+        const limit = DEFAULT_PAGE_SIZE; // Maximum items per request
+
+        this.api.getFolderAPI().getFolder(
+            folderId,
+            limit,
+            offset,
+            sortBy,
+            sortDirection,
+            (collection: Collection) => {
+                const { items = [], totalCount = 0 } = collection;
+                const newAllItems = [...allItems, ...items];
+                const newOffset = offset + items.length;
+
+                // If we have more items to fetch, continue recursively
+                if (newOffset < totalCount) {
+                    this.fetchAllItems(folderId, newOffset, newAllItems, onComplete);
+                } else {
+                    // All items fetched, create a complete collection
+                    const completeCollection = {
+                        ...collection,
+                        items: newAllItems,
+                        offset: 0,
+                        totalCount: newAllItems.length,
+                        percentLoaded: 100,
+                    };
+
+                    if (onComplete) {
+                        onComplete(completeCollection);
+                    }
+                }
+            },
+            this.errorCallback,
+            { forceFetch: true },
+        );
+    };
+
+    /**
      * Fetches a folder, defaults to fetching root folder
      *
      * @private
@@ -522,7 +573,7 @@ class ContentPicker extends Component<Props, State> {
      * @return {void}
      */
     fetchFolder = (id?: string, triggerNavigationEvent?: boolean = true): void => {
-        const { rootFolderId }: Props = this.props;
+        const { rootFolderId, selectAllEnabled }: Props = this.props;
         const {
             currentCollection: { id: currentId },
             currentOffset,
@@ -552,19 +603,26 @@ class ContentPicker extends Component<Props, State> {
             currentOffset: offset,
         });
 
-        // Fetch the folder using folder API
-        this.api.getFolderAPI().getFolder(
-            folderId,
-            limit,
-            offset,
-            sortBy,
-            sortDirection,
-            (collection: Collection) => {
-                this.fetchFolderSuccessCallback(collection, triggerNavigationEvent);
-            },
-            this.errorCallback,
-            { forceFetch: true },
-        );
+        if (selectAllEnabled) {
+            // Fetch all items recursively
+            this.fetchAllItems(folderId, 0, [], (completeCollection: Collection) => {
+                this.fetchFolderSuccessCallback(completeCollection, triggerNavigationEvent);
+            });
+        } else {
+            // Use normal pagination
+            this.api.getFolderAPI().getFolder(
+                folderId,
+                limit,
+                offset,
+                sortBy,
+                sortDirection,
+                (collection: Collection) => {
+                    this.fetchFolderSuccessCallback(collection, triggerNavigationEvent);
+                },
+                this.errorCallback,
+                { forceFetch: true },
+            );
+        }
     };
 
     /**
@@ -653,6 +711,59 @@ class ContentPicker extends Component<Props, State> {
     };
 
     /**
+     * Fetches all search results recursively when selectAllEnabled is true
+     *
+     * @private
+     * @param {string} folderId - folder id
+     * @param {string} query - search query
+     * @param {number} offset - starting offset
+     * @param {Array} allItems - accumulated items
+     * @param {Function} onComplete - callback when all items are fetched
+     * @return {void}
+     */
+    fetchAllSearchResults = (
+        folderId: string,
+        query: string,
+        offset: number = 0,
+        allItems: BoxItem[] = [],
+        onComplete?: Function,
+    ): void => {
+        const { currentPageSize: limit }: State = this.state;
+
+        this.api.getSearchAPI().search(
+            folderId,
+            query,
+            limit,
+            offset,
+            (collection: Collection) => {
+                const { items = [], totalCount = 0 } = collection;
+                const newAllItems = [...allItems, ...items];
+                const newOffset = offset + items.length;
+
+                // If we have more items to fetch, continue recursively
+                if (newOffset < totalCount) {
+                    this.fetchAllSearchResults(folderId, query, newOffset, newAllItems, onComplete);
+                } else {
+                    // All items fetched, create a complete collection
+                    const completeCollection = {
+                        ...collection,
+                        items: newAllItems,
+                        offset: 0,
+                        totalCount: newAllItems.length,
+                        percentLoaded: 100,
+                    };
+
+                    if (onComplete) {
+                        onComplete(completeCollection);
+                    }
+                }
+            },
+            this.errorCallback,
+            { forceFetch: true },
+        );
+    };
+
+    /**
      * Debounced searching
      *
      * @private
@@ -662,13 +773,21 @@ class ContentPicker extends Component<Props, State> {
      * @return {void}
      */
     debouncedSearch: Function = debounce((id: string, query: string): void => {
-        const { currentOffset, currentPageSize }: State = this.state;
+        const { currentOffset, currentPageSize, selectAllEnabled }: State = this.state;
 
-        this.api
-            .getSearchAPI()
-            .search(id, query, currentPageSize, currentOffset, this.searchSuccessCallback, this.errorCallback, {
-                forceFetch: true,
+        if (selectAllEnabled) {
+            // Fetch all search results recursively
+            this.fetchAllSearchResults(id, query, 0, [], (completeCollection: Collection) => {
+                this.searchSuccessCallback(completeCollection);
             });
+        } else {
+            // Use normal pagination
+            this.api
+                .getSearchAPI()
+                .search(id, query, currentPageSize, currentOffset, this.searchSuccessCallback, this.errorCallback, {
+                    forceFetch: true,
+                });
+        }
     }, DEFAULT_SEARCH_DEBOUNCE);
 
     /**
@@ -905,6 +1024,57 @@ class ContentPicker extends Component<Props, State> {
                 this.showSelected();
             }
         });
+    };
+
+    /**
+     * Selects all files in the current collection
+     *
+     * @private
+     * @return {void}
+     */
+    selectAll = (): void => {
+        const { canSetShareAccess, type: selectableType, maxSelectable }: Props = this.props;
+        const {
+            currentCollection: { items = [] },
+            selected,
+        }: State = this.state;
+
+        if (!items.length) {
+            return;
+        }
+
+        const newSelected = { ...selected };
+        let selectedCount = Object.keys(newSelected).length;
+
+        // Filter items that are selectable based on type
+        const selectableItems = items.filter((item: BoxItem) => {
+            const { id, type } = item;
+            return id && type && selectableType.indexOf(type) !== -1;
+        });
+
+        // Select all items up to the maxSelectable limit
+        selectableItems.forEach((item: BoxItem) => {
+            if (selectedCount >= maxSelectable) {
+                return;
+            }
+
+            const { id, type } = item;
+            const cacheKey: string = this.api.getAPI(type).getCacheKey(id);
+            const existing: BoxItem = newSelected[cacheKey];
+
+            if (!existing) {
+                item.selected = true;
+                newSelected[cacheKey] = item;
+                selectedCount += 1;
+
+                // If can set share access, fetch the shared link properties of the item
+                if (canSetShareAccess) {
+                    this.fetchSharedLinkInfo(item);
+                }
+            }
+        });
+
+        this.setState({ selected: newSelected });
     };
 
     /**
@@ -1215,6 +1385,7 @@ class ContentPicker extends Component<Props, State> {
             showSelectedButton,
             theme,
             itemActions,
+            selectAllEnabled,
         }: Props = this.props;
         const {
             view,
@@ -1297,8 +1468,10 @@ class ContentPicker extends Component<Props, State> {
                             chooseButtonLabel={chooseButtonLabel}
                             cancelButtonLabel={cancelButtonLabel}
                             renderCustomActionButtons={renderCustomActionButtons}
+                            selectAllEnabled={selectAllEnabled}
+                            onSelectAll={this.selectAll}
                         >
-                            {isPaginationVisible ? (
+                            {isPaginationVisible && !selectAllEnabled ? (
                                 <Pagination
                                     offset={offset}
                                     onOffsetChange={this.paginate}

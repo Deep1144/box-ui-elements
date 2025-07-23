@@ -28,12 +28,29 @@
         }
     }
 
+    .bcp-select-all {
+        margin-left: 10px !important;
+
+        // margin-right: 0;
+        max-width: 100%;
+        margin: 0;
+
+        .btn-content {
+            display: inline-block;
+            width: 100%;
+            overflow: hidden;
+            line-height: 13px;
+            white-space: nowrap;
+            text-overflow: ellipsis;
+        }
+    }
+
     .bcp-selected-max {
         display: inline-block;
         margin-left: 5px;
         color: $red;
         font-size: 11px;
-        animation: be_pulse .5s 2 linear;
+        animation: be_pulse 0.5s 2 linear;
     }
 
     .bcp-footer-actions {

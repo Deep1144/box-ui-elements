@@ -217,6 +217,11 @@ const messages = defineMessages({
         description: 'Default label for selected items list in the footer.',
         defaultMessage: '{count} Selected',
     },
+    selectAll: {
+        id: 'be.selectAll',
+        description: 'Label for select all button.',
+        defaultMessage: 'Select All',
+    },
     max: {
         id: 'be.max',
         description: 'Indicator on the footer that max items have been selected.',

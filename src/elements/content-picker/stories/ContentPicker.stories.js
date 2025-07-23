@@ -9,6 +9,13 @@ export const withPagination = {
     },
 };
 
+export const withSelectAll = {
+    args: {
+        selectAllEnabled: true,
+        isPaginationVisible: false,
+    },
+};
+
 export default {
     title: 'Elements/ContentPicker',
     component: ContentPicker,

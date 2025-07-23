@@ -47,6 +47,7 @@
 | sharedLink | string |  | *See the [developer docs](https://developer.box.com/guides/embed/ui-elements/picker/#Options).* |
 | sharedLinkPassword | string |  | *See the [developer docs](https://developer.box.com/guides/embed/ui-elements/picker/#Options).* |
 | showSelectedButton | boolean | `true` | Indicates whether or not the selected button is shown. |
+| selectAllEnabled | boolean | `false` | When enabled, loads all files at once and shows a "Select All" button to select all files in the current folder. Pagination is disabled when this is enabled. Handles folders with more than 1000 items by fetching all items recursively. |
 | sortBy | string | `name` | *See the [developer docs](https://developer.box.com/guides/embed/ui-elements/picker/#Options).* |
 | sortDirection | string | `asc` | *See the [developer docs](https://developer.box.com/guides/embed/ui-elements/picker/#Options).* |
 | type | string | `file, web_link` | Indicates which type of items can be picked. Should be a comma seperated combination of `file`, `folder` or `web_link`. |
