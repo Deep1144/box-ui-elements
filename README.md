@@ -1,3 +1,18 @@
+### Wokelo customization
+added select all button in file picker
+
+Note: use linux based machine or mac to do the changes
+
+#### how to use and update
+1. Install using yarn install
+2. yarn start to run the storybook and check the changes
+3. After changes run `npm run release:cdn` command to create builds for cdn files
+4. once command is ran you will see a dist folder in project
+5. copy *picker.css and picker.js* to `FE-Application/public/box` dir
+6. to test locally we can also run test/pickers.html file with live server in vscode
+
+
+
 <p align="center">
   <img width="50%" alt="Box Elements logo" src="https://repository-images.githubusercontent.com/95743138/c161b500-021b-11ea-8bf9-3aa8776acdec" />
   <img width="50%" alt="Box Developer logo" src="https://raw.githubusercontent.com/box/sdks/ded98439b27c2e635c45607131c54e1b6075e252/images/box-dev-logo.png" />
@@ -86,3 +101,6 @@ distributed under the License is distributed on an "AS IS" BASIS,
 WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License.
+
+
+

@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+<!doctype html>
 <html>
     <head>
         <meta charset="UTF-8" />
@@ -39,7 +39,8 @@
                 display: flex;
             }
         </style>
-        <link rel="stylesheet" type="text/css" href="../dev/en-US/picker.css" />
+        <!-- /Users/deep/Documents/Projects/Wokelo/box-deep-fork/box-ui-elements/dist/0.0.0-semantically-released/en-US -->
+        <link rel="stylesheet" type="text/css" href="../dist/0.0.0-semantically-released/en-US/picker.css" />
     </head>
     <body>
         <div class="inputs">
@@ -82,7 +83,7 @@
             <h1>Folder Picker (max 3 items / token generator / no upload)</h1>
             <div class="folderPicker2"></div>
         </div>
-        <script src="../dev/en-US/picker.js"></script>
+        <script src="../dist/0.0.0-semantically-released/en-US/picker.js"></script>
         <script>
             function load() {
                 const { FilePicker, FolderPicker, ContentPicker } = Box;
@@ -109,6 +110,7 @@
                 filePicker1.show(folderId, token, {
                     container: '.filePicker1',
                     autoFocus: true,
+                    selectAllEnabled: true,
                     logoUrl: 'https://d30y9cdsu7xlg0.cloudfront.net/png/12458-200.png',
                 });
 

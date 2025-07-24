@@ -73,4 +73,49 @@ describe('elements/content-picker/Footer', () => {
         const selectedButton = screen.queryByRole('button', { name: '0 Selected' });
         expect(!!selectedButton).toBe(shown);
     });
+
+    test.each`
+        selectAllEnabled | isSingleSelect | onSelectAll  | shown    | should
+        ${false}         | ${false}       | ${jest.fn()} | ${false} | ${'should not show select all button when disabled'}
+        ${true}          | ${true}        | ${jest.fn()} | ${false} | ${'should not show select all button in single select mode'}
+        ${true}          | ${false}       | ${undefined} | ${false} | ${'should not show select all button when no callback'}
+        ${true}          | ${false}       | ${jest.fn()} | ${true}  | ${'should show select all button when enabled'}
+    `('$should', ({ selectAllEnabled, isSingleSelect, onSelectAll, shown }) => {
+        renderComponent({ selectAllEnabled, isSingleSelect, onSelectAll });
+
+        const selectAllButton = screen.queryByRole('button', { name: 'Select All' });
+        expect(!!selectAllButton).toBe(shown);
+    });
+
+    test('should call onSelectAll when select all button is clicked', () => {
+        const onSelectAll = jest.fn();
+        renderComponent({ selectAllEnabled: true, isSingleSelect: false, onSelectAll });
+
+        const selectAllButton = screen.getByRole('button', { name: 'Select All' });
+        selectAllButton.click();
+
+        expect(onSelectAll).toHaveBeenCalledTimes(1);
+    });
+
+    test('should handle select all with large folders', () => {
+        const onSelectAll = jest.fn();
+        renderComponent({
+            selectAllEnabled: true,
+            isSingleSelect: false,
+            onSelectAll,
+            currentCollection: {
+                id: '123',
+                name: 'Large Folder',
+                items: Array.from({ length: 1500 }, (_, i) => ({
+                    id: `item-${i}`,
+                    name: `Item ${i}`,
+                    type: 'file',
+                })),
+                totalCount: 1500,
+            } as Collection,
+        });
+
+        const selectAllButton = screen.getByRole('button', { name: 'Select All' });
+        expect(selectAllButton).toBeInTheDocument();
+    });
 });

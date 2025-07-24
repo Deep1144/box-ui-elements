@@ -20,6 +20,7 @@ interface Props {
     onCancel: () => void;
     onChoose: () => void;
     onSelectedClick: () => void;
+    onSelectAll?: () => void;
     renderCustomActionButtons?: (options: {
         currentFolderId: string;
         currentFolderName: string;
@@ -30,6 +31,7 @@ interface Props {
     }) => React.ReactNode;
     selectedCount: number;
     selectedItems: BoxItem[];
+    selectAllEnabled?: boolean;
     showSelectedButton: boolean;
 }
 
@@ -47,10 +49,13 @@ const Footer = ({
     children,
     renderCustomActionButtons,
     showSelectedButton,
+    selectAllEnabled,
+    onSelectAll,
 }: Props): React.ReactElement => {
     const { formatMessage } = useIntl();
     const cancelMessage = formatMessage(messages.cancel);
     const chooseMessage = formatMessage(messages.choose);
+    const selectAllMessage = formatMessage(messages.selectAll);
     const isChooseButtonDisabled = !selectedCount;
 
     return (
@@ -68,6 +73,11 @@ const Footer = ({
                                 (<FormattedMessage {...messages.max} />)
                             </span>
                         )}
+                    </Button>
+                )}
+                {selectAllEnabled && !isSingleSelect && onSelectAll && (
+                    <Button className="bcp-select-all" onClick={onSelectAll} type={ButtonType.BUTTON}>
+                        {selectAllMessage}
                     </Button>
                 )}
             </div>
